@@ -154,6 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
+            backgroundColor: Colors.green,
             onPressed: scansiona, /*_incrementCounter, */
             tooltip: 'Increment',
             child: Icon(Icons.add),
@@ -162,6 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
             width: 10,
           ),
           FloatingActionButton(
+            backgroundColor: Colors.red,
             onPressed: svuota, /*_incrementCounter, */
             tooltip: 'Increment',
             child: Icon(Icons.delete),
