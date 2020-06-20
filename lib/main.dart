@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:lettore_barcode/trasmissione.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
@@ -14,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Scansione Barcode',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Scansione Barcode'),
     );
   }
 }
@@ -57,6 +59,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   String cameraScanResult="";
+  String TitoloLibro="";
+  List<dynamic> libriScansionati = new List();
 
   void _incrementCounter() {
     setState(() {
@@ -75,8 +79,19 @@ class _MyHomePageState extends State<MyHomePage> {
     String scanRes = await scanner.scan();
     final http.Response response = await mandaCodice(scanRes);
     print(response.statusCode);
+    final http.Response response1 = await trovaCodice(scanRes);
+    var libro = jsonDecode(response1.body);
+    print(libro["items"][0]["volumeInfo"]["title"]);
     setState(() {
+      TitoloLibro=libro["items"][0]["volumeInfo"]["title"];
       cameraScanResult=scanRes;
+      libriScansionati.insert(0,libro);
+    });
+  }
+
+  void svuota(){
+    setState(() {
+      libriScansionati.clear();
     });
   }
 
@@ -114,8 +129,16 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Expanded(
+              child: ListView(
+                children: popolaElenco(libriScansionati),
+              ),
+            ),
             Text(
               cameraScanResult,
+            ),
+            Text(
+              TitoloLibro,
             ),
             Text(
               trasmetti(),
@@ -127,11 +150,24 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: scansiona, /*_incrementCounter, */
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: scansiona, /*_incrementCounter, */
+            tooltip: 'Increment',
+            child: Icon(Icons.add),
+          ), // This trailing comma makes auto-formatting nicer for build methods.
+          SizedBox(
+            width: 10,
+          ),
+          FloatingActionButton(
+            onPressed: svuota, /*_incrementCounter, */
+            tooltip: 'Increment',
+            child: Icon(Icons.delete),
+          ), // This trailing comma makes auto-formatting nicer for build methods.
+        ],
+      ),
     );
   }
 }
