@@ -8,7 +8,8 @@ class Model {
   String lastName;
   String email;
   String password;
-  Model({this.firstName, this.lastName, this.email, this.password});
+  List<String> autori;
+  Model({this.firstName, this.lastName, this.email, this.password, this.autori});
 }
 
 class ElencoLibri extends StatefulWidget {
@@ -20,11 +21,19 @@ class ElencoLibri extends StatefulWidget {
 class _ElencoLibriState extends State<ElencoLibri> {
 
   List<dynamic> libri = new List();
+  List<dynamic> autori = new List();
   int inizz = 1;
-  String testoInput="...";
+  int cerca = 0;
+  String testoInput="";
   final _formKey = GlobalKey<FormState>();
   final myController = TextEditingController();
-  Model m = new Model(firstName: "adler");
+  Model m = new Model(firstName: "adler", autori: new List());
+
+  @override
+  void initState(){
+      super.initState();
+      myController.addListener(ricercaDiretta);
+  }
 
   @override
   void dispose() {
@@ -33,14 +42,82 @@ class _ElencoLibriState extends State<ElencoLibri> {
     super.dispose();
   }
 
+  void ricercaDiretta() async{
+      final http.Response l = await chiamaServerLibri("/titolo", myController.text);
+      var ll = jsonDecode(l.body);
+      setState(() {
+        libri.clear();
+        libri.addAll(ll);
+      });
+      print(libri.length);
+  }
+  void ricercaAutori() async{
+    final http.Response l = await chiamaServerLibri("/autore", m.autori.join(","));
+    var ll = jsonDecode(l.body);
+    setState(() {
+      libri.clear();
+      libri.addAll(ll);
+    });
+    print(libri.length);
+  }
   void trovaLibri() async{
     this.inizz=0;
-    final http.Response l = await chiamaServerLibri();
+    final http.Response l = await chiamaServerLibri("","");
     var ll = jsonDecode(l.body);
     setState(() {
       libri.addAll(ll);
     });
     print(libri.length);
+  }
+
+  List<Widget> elencoAutori(List<dynamic> autori, Model orig){
+    List<Widget> out = new List();
+    List<dynamic> a = autori;
+    for(int i=0; i<a.length; i++){
+      print(a[i]);
+      out.add(
+        Container(
+          height: 30,
+          child: Row(
+            children: [
+              Text(a[i]),
+              Spacer(
+                  flex: 1,
+              ),
+              Checkbox(
+                value: orig.autori.indexOf(a[i])>=0,
+                onChanged: (bool valore){
+                  setState(() {
+                    if (valore)
+                      orig.autori.add(a[i]);
+                    else
+                      orig.autori.remove(a[i]);
+                  });
+                  ricercaAutori();
+                  print(orig.autori);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+      out.add(
+        Divider(
+          thickness: 1,
+        ),
+      );
+    }
+
+    return out;
+  }
+
+  void elencoAutoriTrova() async {
+    final http.Response l = await chiamaServerAutori();
+    var ll = jsonDecode(l.body);
+    setState(() {
+      print(ll);
+      autori.addAll(ll);
+    });
   }
 
   void buttonPressed(){
@@ -54,68 +131,91 @@ class _ElencoLibriState extends State<ElencoLibri> {
 
   @override
   Widget build(BuildContext context) {
-    if(this.inizz==1) this.trovaLibri();
+      if(this.inizz==1) {
+        this.trovaLibri();
+        this.elencoAutoriTrova();
+      }
 
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text('App Name'),
-      ),
-      drawer: Drawer(
-        child: Column(
-          children: [
-          Form(
-          key: _formKey,
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextFormField(
-                  validator: (value) {
-                    if (value.isEmpty) {
-                      return 'Please enter some text';
-                    }
-                    return null;
-                  },
-                  onSaved: (value){
-                      m.firstName=value;
-                  },
-                ),
-              ]
-            ),
-          ),
-              Text("Autore"),
-              TextField(
-                  controller: myController,
-                  decoration: InputDecoration(labelText: "Ciao"),
+      return new Scaffold(
+        appBar: new AppBar(
+          title: new Text('App Name'+this.cerca.toString()),
+          actions: [
+            FlatButton(
+              child: Icon(
+                Icons.search,
+                color: Colors.white,
               ),
-
-             RaisedButton(key:null,
-
-                onPressed: buttonPressed,
-                color: Colors.blueAccent,
-                child: Text(
-                  "BUTTON 1",
-                  style: new TextStyle(
-                      fontSize:12.0,
-                      color: Colors.white,
-
-                      fontFamily: "Roboto"),
-                )
-            ),
+              onPressed: ()=>{
+                setState((){
+                  this.cerca=(this.cerca-1).abs();
+                })
+              },
+            )
           ],
         ),
-      ),
-      body:
-      new ListView(
-          children: [
-            Text(testoInput),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: elencoLibri(libri),
-          )
-      ]),
+        drawer: Drawer(
 
-    );
+          child: ListView(
+            scrollDirection: Axis.vertical,
+
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      TextFormField(
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return 'Please enter some text';
+                          }
+                          return null;
+                        },
+                        onSaved: (value){
+                          m.firstName=value;
+                        },
+                      ),
+                      Text("Autore"),
+                      TextField(
+                        controller: myController,
+                        decoration: InputDecoration(labelText: "Ciao"),
+                      ),
+                      Container(
+                        height: 500,
+                        child: ListView(
+                              children: elencoAutori(autori, m),
+                        ),
+                      ),
+                    ],
+                ),
+              ),
+
+            ],
+          ),
+        ),
+        body:
+        new ListView(
+            children: [
+              Text(""),
+              Padding(
+                padding: EdgeInsets.all(4),
+                child: (this.cerca==1?TextField(
+                  controller: myController,
+                  decoration: InputDecoration(labelText: "Cerca titolo"),
+                ):Spacer()),
+              ),
+              Padding(
+                padding: EdgeInsets.all(4),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: elencoLibri(libri),
+              )
+            ]),
+
+      );
+    }
   }
-}
+

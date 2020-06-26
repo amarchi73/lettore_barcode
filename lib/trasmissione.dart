@@ -1,16 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:lettore_barcode/elencoLibri.dart';
+
 
 String trasmetti(){
   return "ciaoxxxx00000";
 }
-// 'http://192.168.178.26:8080/iban',
+// 'http://192.168.178.58:8080/iban',
+
+String serverIP = "http://192.168.178.58:8080";
+
+
 Future<http.Response> mandaCodice(String codice) {
   return http.post(
-    'http://192.168.178.26:8080/iban',
+    serverIP+'/iban',
     headers: <String, String>{
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -26,9 +32,14 @@ Future<http.Response> trovaCodice(String codice) {
   );
 }
 
-Future<http.Response> chiamaServerLibri(){
-  return http.get('http://192.168.178.26:8080/libri');
+Future<http.Response> chiamaServerLibri(String cosa, String quali){
+  return http.get(serverIP+'/libri'+cosa+"?quali="+quali);
 }
+
+Future<http.Response> chiamaServerAutori(){
+  return http.get(serverIP+'/autori');
+}
+
 
 List<Container> popolaElenco(libriScansionati){
   List<Container> libri = new List();
@@ -71,7 +82,7 @@ List<Widget> elencoLibri(libri){
       new Row(
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 2,
@@ -79,6 +90,9 @@ List<Widget> elencoLibri(libri){
               libri[i]["Img"],
               fit: BoxFit.fill,
             ),
+          ),
+          Padding(
+              padding: EdgeInsets.all(10),
           ),
           Expanded(
             flex: 6,
@@ -89,19 +103,25 @@ List<Widget> elencoLibri(libri){
                     libri[i]["Titolo"],
                     style: new TextStyle(fontSize: 14.0,
                         color: const Color(0xFF000000),
-                        fontWeight: FontWeight.w200,
-                        fontFamily: "Roboto"),
+                        fontFamily: "Roboto",
+                        fontWeight: FontWeight.bold,
+                    ),
                   ),
 
                   new Text(
                     libri[i]["Autore"],
                     style: new TextStyle(fontSize: 12.0,
                         color: const Color(0xFF000000),
-                        fontWeight: FontWeight.w200,
+                        fontWeight: FontWeight.w300,
                         fontFamily: "Roboto"),
-                  )
+                  ),
+                  Text(
+                    libri[i]["Desc"].toString().substring(0,200),
+                    style: new TextStyle(fontSize: 12.0,
+                        color: const Color(0xFF000000),
+                        fontFamily: "Roboto"),
+                  ),
                 ]
-
             ),
           ),
           Expanded(
@@ -109,12 +129,17 @@ List<Widget> elencoLibri(libri){
               child: new Icon(
                   Icons.create,
                   color: const Color(0xFF000000),
-                  size: 48.0)
+                  size: 24.0)
           ),
         ],
       ),
+    );
+    out.add(Padding(
+        padding: EdgeInsets.all(10),
+      )
     );
   }
 
   return out;
 }
+
