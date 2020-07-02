@@ -25,6 +25,9 @@ class _ElencoLibriState extends State<ElencoLibri> {
   int inizz = 1;
   int cerca = 0;
   String testoInput="";
+  String filtroAutori="";
+  String categoria="One";
+
   final _formKey = GlobalKey<FormState>();
   final myController = TextEditingController();
   Model m = new Model(firstName: "adler", autori: new List());
@@ -74,7 +77,9 @@ class _ElencoLibriState extends State<ElencoLibri> {
     List<Widget> out = new List();
     List<dynamic> a = autori;
     for(int i=0; i<a.length; i++){
-      print(a[i]);
+      //print(a[i]);
+      String aa = a[i];
+      if(!aa.toUpperCase().contains(filtroAutori.toUpperCase())) continue;
       out.add(
         Container(
           height: 30,
@@ -176,9 +181,38 @@ class _ElencoLibriState extends State<ElencoLibri> {
                         },
                       ),
                       Text("Autore"),
+
+                      DropdownButton(
+                        value: categoria,
+                        icon: Icon(Icons.arrow_downward),
+                        iconSize: 24,
+                        elevation: 16,
+                        style: TextStyle(color: Colors.deepPurple),
+                        underline: Container(
+                          height: 2,
+                          color: Colors.deepPurpleAccent,
+                        ),
+                        onChanged: (String newValue) {
+                          setState(() {
+                            categoria = newValue;
+                          });
+                        },
+                        items: ['One', 'Two', 'Free', 'Four']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+
                       TextField(
-                        controller: myController,
-                        decoration: InputDecoration(labelText: "Ciao"),
+                        decoration: InputDecoration(labelText: "Filtra autore"),
+                        onChanged: (String s){
+                            setState(() {
+                              filtroAutori=s;
+                            });
+                        },
                       ),
                       Container(
                         height: 500,
